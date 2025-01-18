@@ -7,7 +7,7 @@ import { ThemedView } from '@/components/ThemedView'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { Image, StyleSheet } from 'react-native'
+import { Image, StyleSheet, TextInput } from 'react-native'
 import storage from '../storage/index.json'
 
 import cssImage from '@/assets/images/css.png'
@@ -48,6 +48,12 @@ export default function DescriptionScreen() {
 	const { topic } = useLocalSearchParams()
 	const [activeTopic, setActiveTopic] = useState<iTopic>()
 	const [likedQuestions, setLikedQuestions] = useState<iDescription[]>([])
+	const [searchQuery, setSearchQuery] = useState('')
+
+	const filteredDescriptions =
+		activeTopic?.description.filter(el =>
+			el.question.toLowerCase().includes(searchQuery.toLowerCase())
+		) || []
 
 	const loadLikedQuestions = async () => {
 		const storedLikes = await AsyncStorage.getItem('likedQuestions')
@@ -82,36 +88,42 @@ export default function DescriptionScreen() {
 				<ThemedText type='title'>{topic}</ThemedText>
 			</ThemedView>
 
-			{activeTopic?.description &&
-				activeTopic?.description.map((el, index: number) => (
-					<Collapsible key={index} title={el.question}>
-						<ThemedText>{el.answer}</ThemedText>
+			<TextInput
+				style={styles.searchInput}
+				placeholder='Поиск по вопросам...'
+				value={searchQuery}
+				onChangeText={setSearchQuery}
+			/>
 
-						{el.code && <CodeComponent code={el.code} />}
+			{filteredDescriptions.map((el, index: number) => (
+				<Collapsible key={index} title={el.question}>
+					<ThemedText>{el.answer}</ThemedText>
 
-						{el.link &&
-							el.link.map(
-								(el, index) =>
-									el && (
-										<ExternalLink key={index} href={el}>
-											<ThemedText type='link'>
-												Узнать больше #{index + 1}
-											</ThemedText>
-										</ExternalLink>
-									)
-							)}
-						<Ionicons
-							size={30}
-							name={
-								likedQuestions.some(likeEl => likeEl.id === el.id)
-									? 'heart'
-									: 'heart-outline'
-							}
-							style={styles.headerImage}
-							onPress={() => toggleLike(el)}
-						/>
-					</Collapsible>
-				))}
+					{el.code && <CodeComponent code={el.code} />}
+
+					{el.link &&
+						el.link.map(
+							(el, index) =>
+								el && (
+									<ExternalLink key={index} href={el}>
+										<ThemedText type='link'>
+											Узнать больше #{index + 1}
+										</ThemedText>
+									</ExternalLink>
+								)
+						)}
+					<Ionicons
+						size={30}
+						name={
+							likedQuestions.some(likeEl => likeEl.id === el.id)
+								? 'heart'
+								: 'heart-outline'
+						}
+						style={styles.headerImage}
+						onPress={() => toggleLike(el)}
+					/>
+				</Collapsible>
+			))}
 		</ParallaxScrollView>
 	)
 }
@@ -130,5 +142,13 @@ const styles = StyleSheet.create({
 	},
 	headerImage: {
 		color: '#A1CEDC',
+	},
+	searchInput: {
+		height: 40,
+		borderColor: '#A1CEDC',
+		borderWidth: 1,
+		margin: 10,
+		paddingHorizontal: 10,
+		borderRadius: 10,
 	},
 })
